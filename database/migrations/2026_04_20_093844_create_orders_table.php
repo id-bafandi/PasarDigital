@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->id('order_id');
+            $table->id();
             $table->foreignId('user_id')->constrained();
             $table->decimal('total_harga', 12, 2);
             $table->string('status_pesanan', 50)->default('pending');
