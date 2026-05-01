@@ -57,7 +57,6 @@
                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white">3</span>
                 </div>
             </div>
-
         </div>
     </div>
 </nav>

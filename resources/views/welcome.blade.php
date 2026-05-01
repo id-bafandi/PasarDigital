@@ -24,7 +24,6 @@
                             <p class="text-[10px] text-green-600 font-medium italic">Minuman Segar</p>
                         </div>
                     </div>
-
                     <div class="bg-white p-4 rounded-[2.5rem] shadow-2xl transform rotate-6 hover:rotate-0 transition-transform duration-500 w-full mt-12">
                         <img src="{{ asset('images/produk2.jpg') }}" class="rounded-[2rem] w-full h-64 object-cover">
                         <div class="mt-4 text-center">
@@ -32,7 +31,6 @@
                             <p class="text-[10px] text-green-600 font-medium italic">Camilan Gurih</p>
                         </div>
                     </div>
-
                     <div class="bg-white p-4 rounded-[2.5rem] shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500 w-full hidden md:block">
                         <img src="{{ asset('images/produk3.jpg') }}" class="rounded-[2rem] w-full h-64 object-cover">
                         <div class="mt-4 text-center">
@@ -40,6 +38,18 @@
                             <p class="text-[10px] text-green-600 font-medium italic">Kategori Pilihan</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-8 bg-white border-b border-gray-100">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div class="flex items-center gap-4 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                <div class="text-3xl text-[#1D8267]"><i class="fas fa-box-open"></i></div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 text-lg">Gratis Ongkir</h3>
+                    <p class="text-sm text-gray-600">Pengiriman gratis untuk wilayah tertentu.</p>
                 </div>
             </div>
         </div>
@@ -71,7 +81,7 @@
                         <span class="text-xs font-bold text-[#1D8267] uppercase tracking-widest">{{ $item['category'] }}</span>
                         <h3 class="text-xl font-bold text-gray-800 mt-1 mb-2">{{ $item['name'] }}</h3>
                         <div class="flex items-center gap-1 mb-4">
-                            <div class="flex text-yellow-400">★★  ★★</div>
+                            <div class="flex text-yellow-400">★★ ★★</div>
                             <div class="text-gray-300">★</div>
                         </div>
                         <div class="flex items-center justify-between">
