@@ -28,8 +28,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Ubah ke '/' agar langsung ke halaman utama (Beranda)
-        return redirect()->intended('/');
+        // Redirect berdasarkan role
+        $role = Auth::user()->role;
+
+        return match($role) {
+            'admin'   => redirect()->route('admin.dashboard'),
+            'penjual' => redirect()->route('penjual.dashboard'),
+            'user'    => redirect()->route('konsumen.dashboard'),
+            default   => redirect()->intended('/'),
+        };
     }
 
     /**
