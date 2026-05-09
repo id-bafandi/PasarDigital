@@ -54,6 +54,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:user'])->prefix('konsumen')->group(function () {
     Route::get('/dashboard', fn() => view('konsumen.dashboard'))->name('konsumen.dashboard');
     Route::get('/orders', fn() => view('konsumen.orders'))->name('konsumen.orders');
+    Route::get('/cart', fn() => view('konsumen.cart'))->name('konsumen.cart');
+    Route::get('/checkout', fn() => view('konsumen.checkout'))->name('konsumen.checkout');
+    Route::get('/payment', fn() => view('konsumen.payment'))->name('konsumen.payment');
 });
 
 // =====================

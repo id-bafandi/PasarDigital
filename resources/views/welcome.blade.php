@@ -9,7 +9,7 @@
                 </h1>
                 <p class="text-xl text-gray-600 max-w-lg leading-relaxed">Nikmati berbagai pilihan produk segar dan berkualitas dengan harga yang lebih terjangkau hanya di PasarDigital.</p>
                 <div class="flex gap-4">
-                    <a href="#" class="bg-[#1D8267] text-white px-10 py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-xl hover:-translate-y-1">Belanja Sekarang</a>
+                    <a href="{{ route('konsumen.cart') }}" class="bg-[#1D8267] text-white px-10 py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-xl hover:-translate-y-1">Belanja Sekarang</a>
                     <a href="#" class="bg-white text-gray-800 px-10 py-4 rounded-2xl font-bold border border-gray-200 hover:bg-gray-50 transition-all">Lihat Promo</a>
                 </div>
             </div>
