@@ -7,21 +7,24 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
  
 class PaymentController extends Controller
 {
     /**
-     * Buat order baru dari cart + pilih metode pembayaran.
+     * Proses checkout — buat order + payment, redirect ke halaman konfirmasi.
      */
-    public function checkout(Request $request): JsonResponse
+    public function checkout(Request $request)
     {
         $validated = $request->validate([
-            'payment_method'   => 'required|in:cod,transfer_bank,transfer_ewallet',
-            'shipping_address' => 'required|string|max:500',
-            'notes'            => 'nullable|string|max:255',
+            'metode_pembayaran' => 'required|in:cod,transfer_ewallet',
+            'receiver_name'     => 'required|string|max:255',
+            'phone'             => 'required|string|max:20',
+            'alamat_pengiriman' => 'required|string|max:500',
+            'city'              => 'nullable|string|max:100',
+            'postal_code'       => 'nullable|string|max:10',
+            'catatan'           => 'nullable|string|max:255',
         ]);
  
         $cart = Cart::with('items.product')
@@ -29,98 +32,95 @@ class PaymentController extends Controller
             ->first();
  
         if (!$cart || $cart->items->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart kosong. Tambahkan produk terlebih dahulu.',
-            ], 422);
+            return redirect()->route('cart.index')
+                ->with('error', 'Cart kosong. Tambahkan produk terlebih dahulu.');
         }
  
-        // Cek stok semua item sebelum proses
+        // Gabungkan alamat lengkap
+        $fullAddress = $validated['alamat_pengiriman'];
+        if (!empty($validated['city']))        $fullAddress .= ', ' . $validated['city'];
+        if (!empty($validated['postal_code'])) $fullAddress .= ' ' . $validated['postal_code'];
+ 
+        // ✅ Cek stok — kolom 'stok' di tabel products
         foreach ($cart->items as $item) {
-            if ($item->product->stock < $item->quantity) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Stok produk '{$item->product->name}' tidak mencukupi.",
-                ], 422);
+            if ($item->product->stok < $item->quantity) {
+                return back()->with('error', "Stok produk '{$item->product->nama_produk}' tidak mencukupi.");
             }
         }
  
         DB::beginTransaction();
  
         try {
-            $totalAmount = $cart->items->sum(fn($i) => $i->price * $i->quantity);
+            // ✅ kolom 'harga' di cart_items
+            $totalHarga = $cart->items->sum(fn($i) => $i->harga * $i->quantity);
  
-            // Buat order
+            // ✅ kolom orders: total_harga, status_pesanan, alamat_pengiriman, catatan
             $order = Order::create([
-                'user_id'          => $request->user()->id,
-                'order_number'     => $this->generateOrderNumber(),
-                'status'           => 'pending',
-                'total_amount'     => $totalAmount,
-                'shipping_address' => $validated['shipping_address'],
-                'notes'            => $validated['notes'] ?? null,
+                'user_id'           => $request->user()->id,
+                'order_number'      => $this->generateOrderNumber(),
+                'total_harga'       => $totalHarga,
+                'status_pesanan'    => Order::STATUS_PENDING,
+                'alamat_pengiriman' => $fullAddress,
+                'catatan'           => $validated['catatan'] ?? null,
             ]);
  
-            // Salin item dari cart ke order
             foreach ($cart->items as $item) {
+                // ✅ kolom order_items: harga, subtotal
                 OrderItem::create([
                     'order_id'   => $order->id,
                     'product_id' => $item->product_id,
                     'quantity'   => $item->quantity,
-                    'price'      => $item->price,
-                    'subtotal'   => $item->price * $item->quantity,
+                    'harga'      => $item->harga,
+                    'subtotal'   => $item->harga * $item->quantity,
                 ]);
  
-                // Kurangi stok
-                $item->product->decrement('stock', $item->quantity);
+                // ✅ kurangi stok — kolom 'stok'
+                $item->product->decrement('stok', $item->quantity);
             }
  
-            // Buat record pembayaran
+            // ✅ kolom payments: metode_pembayaran, jumlah_transfer, status_pembayaran, batas_bayar
             $payment = Payment::create([
-                'order_id'       => $order->id,
-                'payment_method' => $validated['payment_method'],
-                'amount'         => $totalAmount,
-                'status'         => 'pending',
-                'due_date'       => now()->addDays(1),
+                'order_id'          => $order->id,
+                'metode_pembayaran' => $validated['metode_pembayaran'],
+                'nama_rekening'     => null,
+                'jumlah_transfer'   => $totalHarga,
+                'status_pembayaran' => Payment::STATUS_PENDING,
+                'batas_bayar'       => now()->addDay(),
             ]);
  
-            // Kosongkan cart setelah checkout
+            // Kosongkan cart
             $cart->items()->delete();
  
             DB::commit();
  
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan berhasil dibuat.',
-                'data'    => [
-                    'order'           => $order->load('items.product'),
-                    'payment'         => $payment,
-                    'payment_info'    => $this->getPaymentInfo($validated['payment_method'], $totalAmount),
-                ],
-            ], 201);
+            return redirect()->route('orders.confirmation', $order->id);
  
         } catch (\Throwable $e) {
             DB::rollBack();
- 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat pesanan. Silakan coba lagi.',
-                'error'   => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
  
     /**
-     * Upload bukti pembayaran (untuk transfer bank / e-wallet).
+     * Tampilkan halaman upload bukti transfer.
      */
-    public function uploadProof(Request $request, Payment $payment): JsonResponse
+    public function uploadProofPage(Payment $payment)
     {
-        $this->authorizePayment($request, $payment);
+        abort_if($payment->order->user_id !== auth()->id(), 403);
+        $payment->load('order.items.product');
+        return view('konsumen.payment-upload', compact('payment'));
+    }
  
-        if ($payment->status !== 'pending') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pembayaran sudah diproses, tidak dapat mengupload bukti.',
-            ], 422);
+    /**
+     * Proses upload bukti transfer.
+     */
+    public function uploadProof(Request $request, Payment $payment)
+    {
+        abort_if($payment->order->user_id !== auth()->id(), 403);
+ 
+        // ✅ cek kolom 'status_pembayaran'
+        if ($payment->status_pembayaran !== Payment::STATUS_PENDING) {
+            return back()->with('error', 'Pembayaran sudah diproses, tidak dapat mengupload bukti.');
         }
  
         $request->validate([
@@ -129,119 +129,128 @@ class PaymentController extends Controller
  
         $path = $request->file('proof')->store('payment_proofs', 'public');
  
+        // ✅ kolom payments: bukti_pembayaran, status_pembayaran, paid_at
         $payment->update([
-            'proof_image' => $path,
-            'status'      => 'waiting_confirmation',
-            'paid_at'     => now(),
+            'bukti_pembayaran'  => $path,
+            'status_pembayaran' => Payment::STATUS_WAITING_CONFIRMATION,
+            'paid_at'           => now(),
         ]);
  
-        return response()->json([
-            'success' => true,
-            'message' => 'Bukti pembayaran berhasil diupload. Menunggu konfirmasi admin.',
-            'data'    => $payment->fresh(),
-        ]);
+        return redirect()->route('orders.show', $payment->order_id)
+            ->with('success', 'Bukti pembayaran berhasil diupload. Menunggu konfirmasi admin.');
     }
  
     /**
-     * Konfirmasi pembayaran (khusus admin).
+     * [Admin] Konfirmasi pembayaran.
      */
-    public function confirm(Request $request, Payment $payment): JsonResponse
+    public function confirm(Request $request, Payment $payment)
     {
-        // Pastikan yang mengakses adalah admin
         abort_unless($request->user()->is_admin, 403, 'Akses ditolak.');
  
-        if (!in_array($payment->status, ['pending', 'waiting_confirmation'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Status pembayaran tidak dapat dikonfirmasi.',
-            ], 422);
+        // ✅ cek kolom 'status_pembayaran'
+        if (!in_array($payment->status_pembayaran, [
+            Payment::STATUS_PENDING,
+            Payment::STATUS_WAITING_CONFIRMATION,
+        ])) {
+            return back()->with('error', 'Status pembayaran tidak dapat dikonfirmasi.');
         }
  
         DB::beginTransaction();
  
         try {
+            // ✅ update kolom: status_pembayaran, confirmed_at, confirmed_by
             $payment->update([
-                'status'       => 'paid',
-                'confirmed_at' => now(),
-                'confirmed_by' => $request->user()->id,
+                'status_pembayaran' => Payment::STATUS_PAID,
+                'confirmed_at'      => now(),
+                'confirmed_by'      => $request->user()->id,
             ]);
  
-            $payment->order->update(['status' => 'processing']);
+            // ✅ update kolom orders: status_pesanan
+            $payment->order->update(['status_pesanan' => Order::STATUS_PROCESSING]);
  
             DB::commit();
  
-            return response()->json([
-                'success' => true,
-                'message' => 'Pembayaran berhasil dikonfirmasi.',
-                'data'    => $payment->load('order'),
-            ]);
- 
         } catch (\Throwable $e) {
             DB::rollBack();
- 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengkonfirmasi pembayaran.',
-            ], 500);
+            return back()->with('error', 'Gagal mengkonfirmasi pembayaran.');
         }
+ 
+        return back()->with('success', 'Pembayaran berhasil dikonfirmasi.');
     }
  
     /**
-     * Batalkan pembayaran / order.
+     * [Admin] Tolak / batalkan pembayaran.
      */
-    public function cancel(Request $request, Payment $payment): JsonResponse
+    public function reject(Request $request, Payment $payment)
     {
-        $this->authorizePayment($request, $payment);
- 
-        if (!in_array($payment->status, ['pending', 'waiting_confirmation'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pembayaran tidak dapat dibatalkan.',
-            ], 422);
-        }
+        abort_unless($request->user()->is_admin, 403, 'Akses ditolak.');
  
         DB::beginTransaction();
  
         try {
-            $payment->update(['status' => 'cancelled']);
+            $payment->update(['status_pembayaran' => Payment::STATUS_CANCELLED]);
  
             $order = $payment->order;
  
-            // Kembalikan stok
+            // ✅ kembalikan stok — kolom 'stok'
             foreach ($order->items as $item) {
-                $item->product->increment('stock', $item->quantity);
+                $item->product->increment('stok', $item->quantity);
             }
  
-            $order->update(['status' => 'cancelled']);
+            // ✅ kolom orders: status_pesanan
+            $order->update(['status_pesanan' => Order::STATUS_CANCELLED]);
  
             DB::commit();
  
-            return response()->json([
-                'success' => true,
-                'message' => 'Pembayaran dan pesanan berhasil dibatalkan.',
-            ]);
- 
         } catch (\Throwable $e) {
             DB::rollBack();
- 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membatalkan pembayaran.',
-            ], 500);
+            return back()->with('error', 'Gagal menolak pembayaran.');
         }
+ 
+        return back()->with('success', 'Pembayaran ditolak dan stok dikembalikan.');
     }
  
     /**
-     * Detail pembayaran.
+     * [User] Batalkan pembayaran sendiri.
      */
-    public function show(Request $request, Payment $payment): JsonResponse
+    public function cancel(Request $request, Payment $payment)
     {
-        $this->authorizePayment($request, $payment);
+        abort_if(
+            $payment->order->user_id !== $request->user()->id,
+            403,
+            'Akses tidak diizinkan.'
+        );
  
-        return response()->json([
-            'success' => true,
-            'data'    => $payment->load('order.items.product'),
-        ]);
+        // ✅ cek status_pembayaran
+        if (!in_array($payment->status_pembayaran, [
+            Payment::STATUS_PENDING,
+            Payment::STATUS_WAITING_CONFIRMATION,
+        ])) {
+            return back()->with('error', 'Pembayaran tidak dapat dibatalkan.');
+        }
+ 
+        DB::beginTransaction();
+ 
+        try {
+            $payment->update(['status_pembayaran' => Payment::STATUS_CANCELLED]);
+ 
+            $order = $payment->order;
+ 
+            foreach ($order->items as $item) {
+                $item->product->increment('stok', $item->quantity);
+            }
+ 
+            $order->update(['status_pesanan' => Order::STATUS_CANCELLED]);
+ 
+            DB::commit();
+ 
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal membatalkan pembayaran.');
+        }
+ 
+        return redirect()->route('orders.index')
+            ->with('success', 'Pembayaran dan pesanan berhasil dibatalkan.');
     }
  
     // -------------------------------------------------------------------------
@@ -251,40 +260,6 @@ class PaymentController extends Controller
     private function generateOrderNumber(): string
     {
         return 'ORD-' . strtoupper(Str::random(8)) . '-' . now()->format('Ymd');
-    }
- 
-    private function getPaymentInfo(string $method, float $amount): array
-    {
-        return match ($method) {
-            'cod' => [
-                'instruction' => 'Bayar tunai saat pesanan tiba di alamat Anda.',
-                'amount'      => $amount,
-            ],
-            'transfer_bank' => [
-                'instruction'    => 'Transfer ke rekening berikut, lalu upload bukti pembayaran.',
-                'bank_name'      => config('payment.bank_name', 'BCA'),
-                'account_number' => config('payment.bank_account', '1234567890'),
-                'account_name'   => config('payment.bank_holder', 'Nama Toko'),
-                'amount'         => $amount,
-            ],
-            'transfer_ewallet' => [
-                'instruction'    => 'Transfer ke e-wallet berikut, lalu upload bukti pembayaran.',
-                'ewallet'        => config('payment.ewallet_type', 'GoPay'),
-                'phone_number'   => config('payment.ewallet_number', '08123456789'),
-                'account_name'   => config('payment.ewallet_holder', 'Nama Toko'),
-                'amount'         => $amount,
-            ],
-            default => [],
-        };
-    }
- 
-    private function authorizePayment(Request $request, Payment $payment): void
-    {
-        abort_if(
-            $payment->order->user_id !== $request->user()->id && !$request->user()->is_admin,
-            403,
-            'Akses tidak diizinkan.'
-        );
     }
 }
  

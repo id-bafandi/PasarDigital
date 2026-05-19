@@ -13,19 +13,12 @@ class CartController extends Controller
     /**
      * Ambil cart milik user yang sedang login.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $cart = Cart::with('items.product')
             ->firstOrCreate(['user_id' => $request->user()->id]);
  
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'cart'       => $cart,
-                'total_price' => $this->calculateTotal($cart),
-                'total_items' => $cart->items->sum('quantity'),
-            ],
-        ]);
+        return view('konsumen.cart', compact('cart'));
     }
  
     /**
@@ -40,21 +33,21 @@ class CartController extends Controller
  
         $product = Product::findOrFail($validated['product_id']);
  
-        if ($product->stock < $validated['quantity']) {
+        // ✅ kolom stok di products = 'stok'
+        if ($product->stok < $validated['quantity']) {
             return response()->json([
                 'success' => false,
                 'message' => 'Stok produk tidak mencukupi.',
             ], 422);
         }
  
-        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
- 
+        $cart     = Cart::firstOrCreate(['user_id' => $request->user()->id]);
         $cartItem = $cart->items()->where('product_id', $product->id)->first();
  
         if ($cartItem) {
             $newQty = $cartItem->quantity + $validated['quantity'];
  
-            if ($product->stock < $newQty) {
+            if ($product->stok < $newQty) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Stok produk tidak mencukupi untuk jumlah tersebut.',
@@ -66,7 +59,7 @@ class CartController extends Controller
             $cart->items()->create([
                 'product_id' => $product->id,
                 'quantity'   => $validated['quantity'],
-                'price'      => $product->price,
+                'harga'      => $product->harga, // ✅ kolom harga di products = 'harga'
             ]);
         }
  
@@ -77,7 +70,7 @@ class CartController extends Controller
             'message' => 'Produk berhasil ditambahkan ke cart.',
             'data'    => [
                 'cart'        => $cart,
-                'total_price' => $this->calculateTotal($cart),
+                'total_harga' => $this->calculateTotal($cart),
                 'total_items' => $cart->items->sum('quantity'),
             ],
         ], 201);
@@ -96,7 +89,8 @@ class CartController extends Controller
  
         $product = $cartItem->product;
  
-        if ($product->stock < $validated['quantity']) {
+        // ✅ kolom stok di products = 'stok'
+        if ($product->stok < $validated['quantity']) {
             return response()->json([
                 'success' => false,
                 'message' => 'Stok produk tidak mencukupi.',
@@ -112,7 +106,7 @@ class CartController extends Controller
             'message' => 'Jumlah item berhasil diperbarui.',
             'data'    => [
                 'cart'        => $cart,
-                'total_price' => $this->calculateTotal($cart),
+                'total_harga' => $this->calculateTotal($cart),
                 'total_items' => $cart->items->sum('quantity'),
             ],
         ]);
@@ -127,7 +121,6 @@ class CartController extends Controller
  
         $cart = $cartItem->cart;
         $cartItem->delete();
- 
         $cart->load('items.product');
  
         return response()->json([
@@ -135,7 +128,7 @@ class CartController extends Controller
             'message' => 'Item berhasil dihapus dari cart.',
             'data'    => [
                 'cart'        => $cart,
-                'total_price' => $this->calculateTotal($cart),
+                'total_harga' => $this->calculateTotal($cart),
                 'total_items' => $cart->items->sum('quantity'),
             ],
         ]);
@@ -164,7 +157,8 @@ class CartController extends Controller
  
     private function calculateTotal(Cart $cart): float
     {
-        return $cart->items->sum(fn($item) => $item->price * $item->quantity);
+        // ✅ kolom harga di cart_items = 'harga'
+        return $cart->items->sum(fn($item) => $item->harga * $item->quantity);
     }
  
     private function authorizeCartItem(Request $request, CartItem $cartItem): void
