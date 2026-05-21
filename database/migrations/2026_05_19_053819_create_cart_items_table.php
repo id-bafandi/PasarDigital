@@ -8,12 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('cart_items', function (Blueprint $table) {
-            $table->foreignId('cart_id')->constrained('carts')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->integer('quantity')->default(1);
-            $table->decimal('harga', 12, 2); // harga snapshot saat ditambah ke cart
-        });
+        Schema::create('cart_items', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('cart_id')->constrained()->onDelete('cascade');
+        $table->foreignId('product_id')->constrained()->onDelete('cascade');
+        $table->integer('quantity');
+        $table->decimal('price', 10, 2);
+        $table->timestamps();
+    });
     }
  
     public function down(): void

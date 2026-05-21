@@ -59,7 +59,7 @@ class CartController extends Controller
             $cart->items()->create([
                 'product_id' => $product->id,
                 'quantity'   => $validated['quantity'],
-                'harga'      => $product->harga, // ✅ kolom harga di products = 'harga'
+                'price' => $product->harga,
             ]);
         }
  
