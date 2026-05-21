@@ -13,7 +13,6 @@
                     <a href="#" class="bg-white text-gray-800 px-10 py-4 rounded-2xl font-bold border border-gray-200 hover:bg-gray-50 transition-all">Lihat Promo</a>
                 </div>
             </div>
-
             <div class="relative flex justify-center items-center">
                 <div class="absolute inset-0 bg-green-200 blur-[100px] opacity-30 rounded-full"></div>
                 <div class="relative grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -64,33 +63,37 @@
                 </div>
                 <a href="#" class="text-[#1D8267] font-bold border-b-2 border-[#1D8267] pb-1 hover:text-black hover:border-black transition-colors">Lihat Semua Produk</a>
             </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 @foreach($products as $item)
                 <div class="group bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500">
                     <div class="relative overflow-hidden rounded-3xl mb-6">
                         <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                            <span class="bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg">{{ $item['discount'] }}</span>
+                            <span class="bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg">-10%</span>
                         </div>
                         <button class="absolute top-4 right-4 z-10 p-3 bg-white/90 backdrop-blur rounded-full shadow-md text-gray-400 hover:text-red-500 transition-all">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                         </button>
-                        <img src="{{ asset('images/' . $item['image']) }}" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-700">
+                        <img src="{{ asset('images/' . ($item->gambar ?? 'produk1.jpg')) }}" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-700">
                     </div>
                     <div>
-                        <span class="text-xs font-bold text-[#1D8267] uppercase tracking-widest">{{ $item['category'] }}</span>
-                        <h3 class="text-xl font-bold text-gray-800 mt-1 mb-2">{{ $item['name'] }}</h3>
+                        <span class="text-xs font-bold text-[#1D8267] uppercase tracking-widest">{{ $item->category->nama_kategori ?? '' }}</span>
+                        <h3 class="text-xl font-bold text-gray-800 mt-1 mb-2">{{ $item->nama_produk }}</h3>
                         <div class="flex items-center gap-1 mb-4">
                             <div class="flex text-yellow-400">★★ ★★</div>
                             <div class="text-gray-300">★</div>
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-2xl font-black text-gray-900">Rp {{ $item['price'] }}</p>
+                                <p class="text-2xl font-black text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</p>
                             </div>
-                            <button class="bg-[#1D8267] text-white p-4 rounded-2xl hover:bg-black transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                            </button>
+                            @auth
+                                @if(Auth::user()->role === 'user')
+                                <button onclick="addToCart({{ $item->id }})"
+                                    class="bg-[#1D8267] text-white p-4 rounded-2xl hover:bg-black transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                </button>
+                                @endif
+                            @endauth
                         </div>
                     </div>
                 </div>
@@ -98,4 +101,31 @@
             </div>
         </div>
     </section>
+
+    <script>
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    async function addToCart(productId) {
+        try {
+            const res = await fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ product_id: productId, quantity: 1 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Produk berhasil ditambahkan ke keranjang!');
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    </script>
+
 </x-app-layout>

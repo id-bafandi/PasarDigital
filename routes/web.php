@@ -2,35 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CartController;
 
 // =====================
 // PUBLIC ROUTES
 // =====================
 Route::get('/', function () {
-    $products = [
-        [
-            'name'     => "Coastal's Hard Coco",
-            'category' => 'Minuman',
-            'price'    => '15.000',
-            'image'    => 'produk1.jpg',
-            'discount' => '-40%'
-        ],
-        [
-            'name'     => "Bots Snack Original",
-            'category' => 'Makanan',
-            'price'    => '20.000',
-            'image'    => 'produk2.jpg',
-            'discount' => '-10%'
-        ],
-        [
-            'name'     => "Bots Snack Original",
-            'category' => 'Pakaian',
-            'price'    => '20.000',
-            'image'    => 'produk3.jpg',
-            'discount' => '-10%'
-        ],
-    ];
-
+    $products = \App\Models\Product::with('category')->get();
     return view('welcome', compact('products'));
 })->name('home');
 
@@ -40,7 +18,7 @@ Route::get('/', function () {
 require __DIR__.'/auth.php';
 
 // =====================
-// PROFILE (semua user login)
+// PROFILE
 // =====================
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -54,9 +32,19 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:user'])->prefix('konsumen')->group(function () {
     Route::get('/dashboard', fn() => view('konsumen.dashboard'))->name('konsumen.dashboard');
     Route::get('/orders', fn() => view('konsumen.orders'))->name('konsumen.orders');
-    Route::get('/cart', fn() => view('konsumen.cart'))->name('konsumen.cart');
+    Route::get('/cart', [CartController::class, 'index'])->name('konsumen.cart');
     Route::get('/checkout', fn() => view('konsumen.checkout'))->name('konsumen.checkout');
     Route::get('/payment', fn() => view('konsumen.payment'))->name('konsumen.payment');
+});
+
+// =====================
+// CART API (AJAX)
+// =====================
+Route::middleware(['auth', 'role:user'])->prefix('api/cart')->group(function () {
+    Route::post('/add', [CartController::class, 'addItem'])->name('cart.add');
+    Route::patch('/update/{cartItem}', [CartController::class, 'updateItem'])->name('cart.update');
+    Route::delete('/remove/{cartItem}', [CartController::class, 'removeItem'])->name('cart.remove');
+    Route::delete('/clear', [CartController::class, 'clear'])->name('cart.clear');
 });
 
 // =====================
