@@ -12,11 +12,11 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'order_number',
-        'total_harga',
-        'status_pesanan',
+        'total_price',
+        'status',
+        'metode_pembayaran',
         'alamat_pengiriman',
         'catatan',
-        'tanggal_pesanan',
     ];
  
     protected $casts = [
