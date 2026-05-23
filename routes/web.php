@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 
 // =====================
 // PUBLIC ROUTES
@@ -31,10 +34,18 @@ Route::middleware('auth')->group(function () {
 // =====================
 Route::middleware(['auth', 'role:user'])->prefix('konsumen')->group(function () {
     Route::get('/dashboard', fn() => view('konsumen.dashboard'))->name('konsumen.dashboard');
-    Route::get('/orders', fn() => view('konsumen.orders'))->name('konsumen.orders');
+    Route::get('/orders', [OrderController::class, 'index'])->name('konsumen.orders');
     Route::get('/cart', [CartController::class, 'index'])->name('konsumen.cart');
-    Route::get('/checkout', fn() => view('konsumen.checkout'))->name('konsumen.checkout');
-    Route::get('/payment', fn() => view('konsumen.payment'))->name('konsumen.payment');
+
+    // ← Checkout: GET tampilkan form, POST proses order
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('konsumen.checkout');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('konsumen.checkout.store');
+
+    // ← Payment: terima order id dari redirect checkout
+    Route::get('/payment/{order}', fn(\App\Models\Order $order) => view('konsumen.payment', compact('order')))->name('konsumen.payment');
+
+    Route::post('/payment/{order}/upload', [PaymentController::class, 'uploadProof'])->name('konsumen.payment.upload');
+    Route::post('/payment/{order}/confirm-cod', [PaymentController::class, 'confirmCod'])->name('konsumen.payment.confirm');
 });
 
 // =====================
