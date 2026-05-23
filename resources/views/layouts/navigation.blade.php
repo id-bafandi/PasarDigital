@@ -2,10 +2,10 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20 items-center">
             
-            <div class="flex-shrink-0 flex items-center gap-2">
+            <a href="{{ route('home') }}" class="flex-shrink-0 flex items-center gap-2">
                 <div class="w-8 h-8 bg-[#1D8267] rounded-lg flex items-center justify-center text-white font-black italic">P</div>
                 <span class="text-lg font-black text-gray-900 tracking-tighter">Pasar<span class="text-[#1D8267]">Digital</span></span>
-            </div>
+            </a>
 
             <div class="hidden md:flex flex-1 max-w-md mx-8">
                 <div class="relative w-full">
