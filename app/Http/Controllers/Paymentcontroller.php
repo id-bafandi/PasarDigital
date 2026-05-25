@@ -63,7 +63,7 @@ class PaymentController extends Controller
      */
     public function confirm(Request $request, Payment $payment)
     {
-        abort_unless($request->user()->is_admin, 403);
+        abort_unless($request->user()->role === 'admin', 403);
 
         DB::beginTransaction();
         try {
@@ -73,7 +73,7 @@ class PaymentController extends Controller
                 'confirmed_by'      => $request->user()->id,
             ]);
 
-            $payment->order->update(['status' => Order::STATUS_PROCESSING]);
+            $payment->order->update(['status' => 'paid']);
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -89,7 +89,7 @@ class PaymentController extends Controller
      */
     public function reject(Request $request, Payment $payment)
     {
-        abort_unless($request->user()->is_admin, 403);
+        abort_unless($request->user()->role === 'admin', 403);
 
         DB::beginTransaction();
         try {
