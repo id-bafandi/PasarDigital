@@ -44,8 +44,8 @@
 
                     <div class="space-y-4">
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] ml-1">Pilih Identitas</label>
-                        <div class="grid grid-cols-3 gap-3 bg-gray-50/50 p-1.5 rounded-[2rem] border border-gray-100 shadow-inner">
-                            @foreach(['user' => 'Pembeli', 'penjual' => 'Penjual', 'admin' => 'Admin'] as $val => $label)
+                        <div class="grid grid-cols-2 gap-3 bg-gray-50/50 p-1.5 rounded-[2rem] border border-gray-100 shadow-inner">
+                            @foreach(['user' => 'Pembeli', 'penjual' => 'Penjual'] as $val => $label)
                             <label class="cursor-pointer group">
                                 <input type="radio" name="role" value="{{ $val }}" class="peer hidden" {{ $val == 'user' ? 'checked' : '' }}>
                                 <div class="py-3.5 rounded-[1.6rem] text-center transition-all duration-500 peer-checked:bg-[#1C2431] peer-checked:text-white peer-checked:shadow-xl group-hover:bg-gray-100/50 peer-checked:group-hover:bg-[#1C2431]">
