@@ -6,6 +6,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AdminController;
 
 // =====================
 // PUBLIC ROUTES
@@ -70,8 +71,16 @@ Route::middleware(['auth', 'role:penjual'])->prefix('penjual')->group(function (
 // ADMIN
 // =====================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', fn() => view('admin.dashboard'))->name('admin.dashboard');
-    Route::get('/users', fn() => view('admin.users'))->name('admin.users');
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+    Route::get('/orders', [AdminController::class, 'orders'])->name('admin.orders');
+    Route::patch('/orders/{order}/status', [AdminController::class, 'updateOrderStatus'])->name('admin.orders.status');
+    Route::get('/products', [AdminController::class, 'products'])->name('admin.products');
+    Route::delete('/products/{product}', [AdminController::class, 'deleteProduct'])->name('admin.products.delete');
+    Route::get('/payments', [AdminController::class, 'payments'])->name('admin.payments');
+    Route::post('/payments/{payment}/confirm', [PaymentController::class, 'confirm'])->name('admin.payments.confirm');
+    Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('admin.payments.reject');
 });
 
 // =====================
