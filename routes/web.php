@@ -7,6 +7,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PenjualController;
 
 // =====================
 // PUBLIC ROUTES
@@ -63,8 +64,13 @@ Route::middleware(['auth', 'role:user'])->prefix('api/cart')->group(function () 
 // PENJUAL
 // =====================
 Route::middleware(['auth', 'role:penjual'])->prefix('penjual')->group(function () {
-    Route::get('/dashboard', fn() => view('penjual.dashboard'))->name('penjual.dashboard');
-    Route::get('/products', fn() => view('penjual.products'))->name('penjual.products');
+    Route::get('/dashboard', [PenjualController::class, 'dashboard'])->name('penjual.dashboard');
+    Route::get('/products', [PenjualController::class, 'products'])->name('penjual.products');
+    Route::get('/products/create', [PenjualController::class, 'create'])->name('penjual.products.create');
+    Route::post('/products', [PenjualController::class, 'store'])->name('penjual.products.store');
+    Route::get('/products/{product}/edit', [PenjualController::class, 'edit'])->name('penjual.products.edit');
+    Route::put('/products/{product}', [PenjualController::class, 'update'])->name('penjual.products.update');
+    Route::delete('/products/{product}', [PenjualController::class, 'delete'])->name('penjual.products.delete');
 });
 
 // =====================
