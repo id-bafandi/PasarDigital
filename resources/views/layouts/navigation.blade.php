@@ -20,6 +20,17 @@
             <div class="flex items-center gap-6">
                 @auth
                     <div class="flex items-center gap-4">
+                        @if (Auth::user()->role === 'penjual')
+                            <a href="{{ route('penjual.dashboard') }}"
+                                class="text-xs font-bold text-gray-600 hover:text-[#1D8267] transition-all">
+                                Dashboard
+                            </a>
+                        @elseif (Auth::user()->role === 'admin')
+                            <a href="{{ route('admin.dashboard') }}"
+                                class="text-xs font-bold text-gray-600 hover:text-[#1D8267] transition-all">
+                                Dashboard
+                            </a>
+                        @endif
                         <div class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-full border border-gray-100 shadow-sm transition-all hover:shadow-md">
                             <div class="w-9 h-9 bg-[#1C2431] rounded-full flex items-center justify-center text-white text-xs font-black ring-2 ring-white">
                                 {{ substr(Auth::user()->name, 0, 1) }}
