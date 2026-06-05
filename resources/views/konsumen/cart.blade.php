@@ -115,4 +115,12 @@
             }
         }
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cartBadge = document.getElementById('cart-badge');
+        if (cartBadge) {
+            cartBadge.classList.add('hidden');
+        }
+    });
+    </script>
 </x-app-layout>
