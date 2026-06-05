@@ -8,13 +8,22 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PenjualController;
+use App\Http\Controllers\WishlistController;
 
 // =====================
 // PUBLIC ROUTES
 // =====================
 Route::get('/', function () {
-    $products = \App\Models\Product::with('category')->get();
-    return view('welcome', compact('products'));
+    $products = \App\Models\Product::with('category')
+        ->when(request('category'), fn($q) => $q->where('category_id', request('category')))
+        ->get();
+    $categories = \App\Models\Category::all();
+    
+    $wishlistIds = auth()->check() 
+        ? \App\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->toArray()
+        : [];
+
+    return view('welcome', compact('products', 'categories', 'wishlistIds'));
 })->name('home');
 
 // =====================
@@ -35,6 +44,7 @@ Route::middleware('auth')->group(function () {
 // USER (konsumen)
 // =====================
 Route::middleware(['auth', 'role:user'])->prefix('konsumen')->group(function () {
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('konsumen.wishlist');
     Route::get('/dashboard', fn() => view('konsumen.dashboard'))->name('konsumen.dashboard');
     Route::get('/orders', [OrderController::class, 'index'])->name('konsumen.orders');
     Route::get('/cart', [CartController::class, 'index'])->name('konsumen.cart');
@@ -58,6 +68,10 @@ Route::middleware(['auth', 'role:user'])->prefix('api/cart')->group(function () 
     Route::patch('/update/{cartItem}', [CartController::class, 'updateItem'])->name('cart.update');
     Route::delete('/remove/{cartItem}', [CartController::class, 'removeItem'])->name('cart.remove');
     Route::delete('/clear', [CartController::class, 'clear'])->name('cart.clear');
+});
+
+Route::middleware(['auth', 'role:user'])->prefix('api/wishlist')->group(function () {
+    Route::post('/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
 // =====================
@@ -95,3 +109,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 Route::middleware(['auth', 'role:penjual,admin'])->group(function () {
     Route::get('/reports', fn() => view('reports'))->name('reports');
 });
+
+Route::get('/produk/{product}', function(\App\Models\Product $product) {
+    $wishlistIds = auth()->check()
+        ? \App\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->toArray()
+        : [];
+    return view('produk.detail', compact('product', 'wishlistIds'));
+})->name('produk.detail');
