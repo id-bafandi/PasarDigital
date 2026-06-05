@@ -1,3 +1,6 @@
+@php
+    $wishlistIds = $wishlistIds ?? [];
+@endphp
 <x-app-layout>
     <section class="bg-[#E7F3EF] py-16">
         <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -56,6 +59,21 @@
 
     <section class="py-20 bg-white">
         <div class="container mx-auto px-4">
+            {{-- Filter Kategori --}}
+            <div class="flex gap-3 flex-wrap mb-8">
+                <a href="{{ route('home') }}"
+                    class="px-5 py-2 rounded-2xl text-sm font-bold transition-all
+                    {{ !request('category') ? 'bg-[#1D8267] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                    Semua
+                </a>
+                @foreach ($categories as $category)
+                    <a href="{{ route('home', ['category' => $category->id]) }}"
+                        class="px-5 py-2 rounded-2xl text-sm font-bold transition-all
+                        {{ request('category') == $category->id ? 'bg-[#1D8267] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                        {{ $category->nama_kategori }}
+                    </a>
+                @endforeach
+            </div>
             <div class="flex justify-between items-end mb-12">
                 <div>
                     <h2 class="text-4xl font-black text-gray-900 mb-2">Produk Unggulan Kami</h2>
@@ -70,27 +88,38 @@
                         <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
                             <span class="bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg">-10%</span>
                         </div>
-                        <button class="absolute top-4 right-4 z-10 p-3 bg-white/90 backdrop-blur rounded-full shadow-md text-gray-400 hover:text-red-500 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                        </button>
+                        @auth
+                            @if(Auth::user()->role === 'user')
+                            <button onclick="toggleWishlist({{ $item->id }}, this)"
+                                class="absolute top-4 right-4 z-10 p-3 bg-white/90 backdrop-blur rounded-full shadow-md transition-all {{ in_array($item->id, $wishlistIds) ? 'text-red-500' : 'text-gray-400' }} hover:text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" 
+                                    fill="{{ in_array($item->id, $wishlistIds) ? 'currentColor' : 'none' }}" 
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                            </button>
+                            @endif
+                        @endauth
                         <img src="{{ asset('images/' . ($item->gambar ?? 'produk1.jpg')) }}" class="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-700">
                     </div>
                     <div>
                         <span class="text-xs font-bold text-[#1D8267] uppercase tracking-widest">{{ $item->category->nama_kategori ?? '' }}</span>
-                        <h3 class="text-xl font-bold text-gray-800 mt-1 mb-2">{{ $item->nama_produk }}</h3>
+                        <a href="{{ route('produk.detail', $item->id) }}">
+                            <h3 class="text-xl font-bold text-gray-800 mt-1 mb-2 hover:text-[#1D8267] transition-colors">{{ $item->nama_produk }}</h3>
+                        </a>
                         <div class="flex items-center gap-1 mb-4">
                             <div class="flex text-yellow-400">★★ ★★</div>
                             <div class="text-gray-300">★</div>
                         </div>
                         <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-2xl font-black text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</p>
-                            </div>
+                            <p class="text-2xl font-black text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</p>
                             @auth
                                 @if(Auth::user()->role === 'user')
                                 <button onclick="addToCart({{ $item->id }})"
                                     class="bg-[#1D8267] text-white p-4 rounded-2xl hover:bg-black transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
                                 </button>
                                 @endif
                             @endauth
@@ -118,9 +147,54 @@
             });
             const data = await res.json();
             if (data.success) {
+                // Update angka cart tanpa refresh
+                const cartBadge = document.getElementById('cart-badge');
+                const totalItems = data.data.total_items;
+                if (cartBadge) {
+                    cartBadge.textContent = totalItems;
+                    cartBadge.classList.remove('hidden');
+                }
                 alert('Produk berhasil ditambahkan ke keranjang!');
             } else {
                 alert(data.message);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function toggleWishlist(productId, btn) {
+        try {
+            const res = await fetch(`/api/wishlist/${productId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const svg = btn.querySelector('svg');
+                const badge = document.getElementById('wishlist-badge');
+                if (data.wishlisted) {
+                    svg.setAttribute('fill', 'currentColor');
+                    btn.classList.add('text-red-500');
+                    btn.classList.remove('text-gray-400');
+                    if (badge) {
+                        badge.textContent = parseInt(badge.textContent) + 1;
+                        badge.classList.remove('hidden');
+                    }
+                } else {
+                    svg.setAttribute('fill', 'none');
+                    btn.classList.remove('text-red-500');
+                    btn.classList.add('text-gray-400');
+                    if (badge) {
+                        const count = parseInt(badge.textContent) - 1;
+                        badge.textContent = count;
+                        if (count <= 0) badge.classList.add('hidden');
+                    }
+                }
             }
         } catch (err) {
             console.error(err);

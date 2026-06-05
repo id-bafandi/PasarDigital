@@ -60,12 +60,39 @@
                         </a>
                     </div>
                 @endauth
+                @auth
+                    @if(Auth::user()->role === 'user')
+                        <a href="{{ route('konsumen.wishlist') }}" class="relative group cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-900 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            @php
+                                $wishlistCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
+                            @endphp
+                            <span id="wishlist-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white {{ $wishlistCount > 0 ? '' : 'hidden' }}">
+                                {{ $wishlistCount }}
+                            </span>
+                        </a>
+                    @endif
+                @endauth
 
                 <a href="{{ route('konsumen.cart') }}" class="relative group cursor-pointer">
                 <svg class="w-6 h-6 text-gray-900 group-hover:text-[#1D8267] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                 </svg>
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white">3</span>
+                @auth
+                    @if(Auth::user()->role === 'user')
+                        @php
+                            $cartCount = \App\Models\Cart::where('user_id', Auth::id())
+                                ->first()
+                                ?->items()
+                                ->sum('quantity') ?? 0;
+                        @endphp
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white {{ $cartCount > 0 ? '' : 'hidden' }}">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
+                @endauth
             </a>
             </div>
         </div>
