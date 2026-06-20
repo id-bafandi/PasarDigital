@@ -82,15 +82,23 @@
                 </div>
             @else
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-                    <h2 class="text-lg font-black text-gray-900 mb-2">Pesanan Dikonfirmasi</h2>
-                    <p class="text-sm text-gray-500 mb-4">Pesananmu sedang diproses. Pembayaran dilakukan saat barang tiba.</p>
-                    <form action="{{ route('konsumen.payment.confirm', $order->id) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="w-full bg-[#1D8267] hover:bg-[#166651] text-white font-bold py-4 rounded-2xl transition">
-                            Konfirmasi Pesanan COD
-                        </button>
-                    </form>
+                    @if ($order->status === 'pending')
+                        <h2 class="text-lg font-black text-gray-900 mb-2">Konfirmasi Pesanan</h2>
+                        <p class="text-sm text-gray-500 mb-4">Pesananmu sedang diproses. Pembayaran dilakukan saat barang tiba.</p>
+                        <form action="{{ route('konsumen.payment.confirm', $order->id) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full bg-[#1D8267] hover:bg-[#166651] text-white font-bold py-4 rounded-2xl transition">
+                                Konfirmasi Pesanan COD
+                            </button>
+                        </form>
+                    @else
+                        <div class="text-center py-4">
+                            <p class="text-4xl mb-3">✅</p>
+                            <h2 class="text-lg font-black text-gray-900">Pesanan Dikonfirmasi!</h2>
+                            <p class="text-sm text-gray-500 mt-1">Pesananmu sedang dalam proses pengiriman.</p>
+                        </div>
+                    @endif
                 </div>
             @endif
 

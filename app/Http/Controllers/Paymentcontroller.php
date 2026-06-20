@@ -52,7 +52,7 @@ class PaymentController extends Controller
             ]
         );
 
-        $order->update(['status' => 'processing']);
+        $order->update(['status' => 'paid']);
 
         return redirect()->route('konsumen.payment', ['order' => $order->id])
             ->with('success', 'Pesanan COD dikonfirmasi. Pesananmu sedang diproses.');
