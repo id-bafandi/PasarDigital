@@ -7,6 +7,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\QrisController;
 use App\Http\Controllers\PenjualController;
 use App\Http\Controllers\WishlistController;
 
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'role:user'])->prefix('konsumen')->group(function () 
     // ← Checkout: GET tampilkan form, POST proses order
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('konsumen.checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('konsumen.checkout.store');
+    Route::get('/payment/{order}/qris-image', [QrisController::class, 'generate'])->name('konsumen.payment.qris');
 
     // ← Payment: terima order id dari redirect checkout
     Route::get('/payment/{order}', fn(\App\Models\Order $order) => view('konsumen.payment', compact('order')))->name('konsumen.payment');
