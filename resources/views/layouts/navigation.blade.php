@@ -62,6 +62,13 @@
                 @endauth
                 @auth
                     @if(Auth::user()->role === 'user')
+                        {{-- Icon Riwayat Pesanan --}}
+                        <a href="{{ route('konsumen.orders') }}" class="relative group cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-900 group-hover:text-[#1D8267] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </a>
+                        {{-- Icon Wishlist --}}
                         <a href="{{ route('konsumen.wishlist') }}" class="relative group cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-900 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
