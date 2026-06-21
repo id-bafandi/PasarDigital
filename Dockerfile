@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev libzip-dev unzip curl \
     libonig-dev libxml2-dev nodejs npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql mbstring zip tokenizer xml curl fileinfo
+    && docker-php-ext-install gd pdo_mysql zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
