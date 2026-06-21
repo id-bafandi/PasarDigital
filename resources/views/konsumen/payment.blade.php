@@ -32,7 +32,7 @@
                 @if ($order->metode_pembayaran === 'qris')
                     <div class="bg-[#1D8267]/5 border border-[#1D8267]/20 rounded-xl p-4 mb-4 text-center">
                         <p class="text-sm text-gray-600 mb-2">Scan QR Code berikut:</p>
-                        <img src="{{ asset('images/ilustrasi-qrcode.png') }}" class="w-40 h-40 rounded-xl mx-auto object-contain">
+                        <img src="{{ route('konsumen.payment.qris', $order->id) }}" class="w-40 h-40 rounded-xl mx-auto object-contain">
                         <p class="text-sm font-bold text-[#1D8267] mt-2">PasarDigital</p>
                     </div>
                 @else
