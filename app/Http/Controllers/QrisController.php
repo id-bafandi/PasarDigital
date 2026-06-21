@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\QrisHelper;
 use App\Models\Order;
 use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Writer\SvgWriter;
 
 class QrisController extends Controller
 {
@@ -17,10 +17,10 @@ class QrisController extends Controller
         $qrisDinamis = QrisHelper::toDinamis($qrisStatis, (int) $order->total_price);
 
         $qrCode = new QrCode($qrisDinamis);
-        $writer = new PngWriter();
+        $writer = new SvgWriter();
         $result = $writer->write($qrCode);
 
         return response($result->getString(), 200)
-            ->header('Content-Type', 'image/png');
+            ->header('Content-Type', 'image/svg+xml');
     }
 }
