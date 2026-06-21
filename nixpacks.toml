@@ -1,2 +1,0 @@
-[phases.setup]
-nixPkgs = ['php84', 'php84Packages.composer2', 'php84Extensions.gd', 'php84Extensions.pdo_mysql', 'php84Extensions.mbstring', 'php84Extensions.tokenizer', 'php84Extensions.xml', 'php84Extensions.curl', 'php84Extensions.fileinfo', 'php84Extensions.zip']
